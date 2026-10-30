@@ -1,0 +1,126 @@
+<!doctype html>
+<html lang="en">
+<head>
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<title>BLACKST4R Advertisement</title>
+	<link rel="icon" type="image/png" href="BLACKST4R Icon.png">
+	<style>
+		* { box-sizing: border-box; }
+		html, body { width: 100%; height: 100%; margin: 0; }
+		body { overflow: hidden; background: #111; color: #fff; font: 14px system-ui, sans-serif; }
+		.viewer {
+			display: grid;
+			width: 100%;
+			height: 100%;
+			height: 100dvh;
+			grid-template: minmax(0, 1fr) / minmax(0, 1fr);
+			place-items: center;
+			overflow: hidden;
+			touch-action: none;
+		}
+		.viewer img {
+			display: block;
+			width: 100%;
+			height: 100%;
+			object-fit: contain;
+			transform: translate(var(--pan-x, 0px), var(--pan-y, 0px)) scale(var(--zoom, 1));
+			transform-origin: center;
+			user-select: none;
+			-webkit-user-drag: none;
+			cursor: grab;
+		}
+		.viewer img.dragging { cursor: grabbing; }
+		.controls {
+			position: fixed;
+			right: 16px;
+			bottom: 16px;
+			display: flex;
+			gap: 8px;
+			padding: 8px;
+			border-radius: 8px;
+			background: rgb(0 0 0 / 65%);
+		}
+		.controls button {
+			min-width: 40px;
+			min-height: 40px;
+			border: 0;
+			border-radius: 5px;
+			background: #333;
+			color: inherit;
+			font: inherit;
+			font-size: 18px;
+			cursor: pointer;
+		}
+		.controls button:hover { background: #555; }
+		.controls button:focus-visible { outline: 2px solid #fff; outline-offset: 2px; }
+	</style>
+</head>
+<body>
+	<main class="viewer" aria-label="Image viewer">
+		<img id="advertisement" src="BLACKST4R Advertisement.png" alt="BLACKST4R Advertisement" draggable="false">
+	</main>
+	<nav class="controls" aria-label="Image zoom controls">
+		<button type="button" id="zoom-out" aria-label="Zoom out" title="Zoom out">−</button>
+		<button type="button" id="zoom-in" aria-label="Zoom in" title="Zoom in">+</button>
+		<button type="button" id="fit" aria-label="Fit image to screen" title="Fit image to screen">Fit</button>
+	</nav>
+	<script>
+		const image = document.getElementById("advertisement");
+		const viewer = document.querySelector(".viewer");
+		let zoom = 1;
+		let panX = 0;
+		let panY = 0;
+		let dragStart = null;
+
+		function updateView() {
+			image.style.setProperty("--zoom", zoom);
+			image.style.setProperty("--pan-x", `${panX}px`);
+			image.style.setProperty("--pan-y", `${panY}px`);
+		}
+
+		function setZoom(nextZoom) {
+			zoom = Math.min(5, Math.max(1, nextZoom));
+			if (zoom === 1) {
+				panX = 0;
+				panY = 0;
+			}
+			updateView();
+		}
+
+		document.getElementById("zoom-in").addEventListener("click", () => setZoom(zoom * 1.25));
+		document.getElementById("zoom-out").addEventListener("click", () => setZoom(zoom / 1.25));
+		document.getElementById("fit").addEventListener("click", () => setZoom(1));
+
+		viewer.addEventListener("wheel", event => {
+			event.preventDefault();
+			setZoom(zoom * (event.deltaY < 0 ? 1.1 : 1 / 1.1));
+		}, { passive: false });
+
+		image.addEventListener("pointerdown", event => {
+			if (zoom === 1) return;
+			dragStart = { x: event.clientX - panX, y: event.clientY - panY };
+			image.classList.add("dragging");
+			image.setPointerCapture(event.pointerId);
+		});
+		image.addEventListener("pointermove", event => {
+			if (!dragStart) return;
+			panX = event.clientX - dragStart.x;
+			panY = event.clientY - dragStart.y;
+			updateView();
+		});
+		function stopDragging() {
+			dragStart = null;
+			image.classList.remove("dragging");
+		}
+		image.addEventListener("pointerup", stopDragging);
+		image.addEventListener("pointercancel", stopDragging);
+
+		document.addEventListener("keydown", event => {
+			if (event.key === "+" || event.key === "=") setZoom(zoom * 1.25);
+			if (event.key === "-") setZoom(zoom / 1.25);
+			if (event.key === "0") setZoom(1);
+		});
+	</script>
+</body>
+</html>
